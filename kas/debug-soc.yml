@@ -1,0 +1,10 @@
+header:
+  version: 11
+  includes:
+    - base.yml
+    - morello-linux-debug.yml
+
+machine: morello-soc
+
+target:
+  - morello-image

@@ -1,0 +1,24 @@
+header:
+  version: 11
+  includes:
+    - base.yml
+
+local_conf_header:
+
+  setup: |
+    LOGIN_PASSWORD = "NOPASSWD:"
+
+  data_collectors: |
+    DB_USER              ?= "admin"
+    DB_PASSWORD          ?= "admin"
+
+    DB_ROOT_PASSWORD     ?= "root"
+
+    DB_ZABBIX_USER_SERVER     ?= "zabbix"
+    DB_ZABBIX_USER_AGENT      ?= "zabbtx"
+    DB_ZABBIX_PASSWORD        ?= "zabbix"
+    DB_ZABBIX_NAME            ?= "zabbix"
+
+  image: |
+    EXTRA_IMAGE_FEATURES ?= "debug-tweaks"
+    IMAGE_INSTALL:append = " nano"

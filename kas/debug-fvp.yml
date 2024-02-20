@@ -1,0 +1,20 @@
+header:
+  version: 11
+  includes:
+    - base.yml
+    - morello-linux-debug.yml
+
+machine: morello-fvp
+
+local_conf_header:
+    fvp-config: |
+
+        LICENSE_FLAGS_ACCEPTED:append = " Arm-FVP-EULA"
+
+        INHERIT             += "fvpboot"
+
+        CORE_IMAGE_EXTRA_INSTALL:append = " ssh-pregen-hostkeys"
+
+        FVP_CONSOLES[default] = "terminal_uart_ap"
+target:
+  - core-image-minimal

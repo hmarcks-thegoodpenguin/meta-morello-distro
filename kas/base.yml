@@ -1,0 +1,38 @@
+header:
+  version: 11
+  includes:
+    - repo: meta-morello
+      file: kas/base.yml
+
+defaults:
+  repos:
+    refspec: kirkstone
+
+repos:
+  meta-morello-distro:
+
+  meta-morello:
+    url: "https://git.morello-project.org/morello/meta-morello.git"
+    refspec: "431908fa33773d2df2b0fafb72491793f3f33d41"
+    layers:
+      meta-morello:
+      meta-morello-toolchain:
+
+  meta-openembedded:
+    url: "https://github.com/openembedded/meta-openembedded"
+    refspec: "278ec081a64e6a7679d6def550101158126cd935"
+    layers:
+      meta-oe:
+      meta-python:
+      meta-networking:
+      meta-filesystems:
+      meta-webserver:
+
+machine: unset
+
+target:
+  - morello-image
+
+local_conf_header:
+  base: |
+    DISTRO = "morello"
