@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [[ "${1}" == "--includedir" ]]; then
+
+    echo "${INCLUDEDIR_IN}"
+
+elif [[ "${1}" == "--libdir" ]]; then
+
+    echo "${LIBDIR_IN}"
+
+elif [[ "${1}" == "--version" ]]; then
+
+    echo "${VERSION_IN}"
+
+fi
