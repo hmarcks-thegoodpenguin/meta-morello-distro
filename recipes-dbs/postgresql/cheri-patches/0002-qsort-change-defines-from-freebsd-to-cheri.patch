@@ -1,0 +1,57 @@
+From d7c33a58cd02ae15ebdcc6585f568f5f3d8914bd Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Thu, 11 May 2023 15:37:01 +0100
+Subject: [PATCH] qsort: change defines from freebsd to cheri
+
+This is not FreeBSD OS, so the pre-processor will not do what it should
+and the postgres qsrot will be used.
+
+Lets fix it without due care.
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+
+---
+ src/include/port.h   | 2 +-
+ src/port/qsort.c     | 2 +-
+ src/port/qsort_arg.c | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/include/port.h b/src/include/port.h
+index bddb510e8a..27e7dad9c2 100644
+--- a/src/include/port.h
++++ b/src/include/port.h
+@@ -438,7 +438,7 @@ extern void pg_qsort(void *base, size_t nel, size_t elsize,
+ 		 int (*cmp) (const void *, const void *));
+ 
+ /* Use ifdef FreeBSD and not __CHERI_PURE_CAPABILITY__ so that we use the same code path for MIPS and CHERI */
+-#ifdef __FreeBSD__
++#ifdef __CHERI_PURE_CAPABILITY__
+ /* Postgres qsort_arg is broken for capabilities so we replace it with qsort_r but that uses a different parameter order for cmp */
+ typedef int (*qsort_arg_comparator) (const void *a, const void *b, void *arg);
+ /*
+diff --git a/src/port/qsort.c b/src/port/qsort.c
+index 8a75ff492e..50af3ebb02 100644
+--- a/src/port/qsort.c
++++ b/src/port/qsort.c
+@@ -46,7 +46,7 @@
+ 
+ #include "c.h"
+ 
+-#ifdef __FreeBSD__
++#ifdef __CHERI_PURE_CAPABILITY__
+ /*
+  * XXXAR: the postgres version of qsort does not work with capabilities (swap
+  * is broken) so we have to make sure to use the libc version
+diff --git a/src/port/qsort_arg.c b/src/port/qsort_arg.c
+index 90bbf16541..fb1d5fc6ff 100644
+--- a/src/port/qsort_arg.c
++++ b/src/port/qsort_arg.c
+@@ -46,7 +46,7 @@
+ 
+ #include "c.h"
+ 
+-#ifndef __FreeBSD__
++#ifndef __CHERI_PURE_CAPABILITY__
+ #warning "using postgres custom qsort_arg function"
+ 
+ static char *med3(char *a, char *b, char *c,

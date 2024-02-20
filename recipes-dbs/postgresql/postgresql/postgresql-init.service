@@ -1,0 +1,19 @@
+[Unit]
+Description=Postgresql setup
+Wants=postgresql.service
+After=postgresql.service
+
+[Service]
+Type=oneshot
+
+Environment=DB_USER=%DB_USER%
+Environment=DB_PASSWORD=%DB_PASSWORD%
+
+Environment=PGROOT=%PGINSTALLDIR%
+
+ExecStart=%SYSCONFIGDIR%/postgresql/postgresql-init
+ExecStartPost=/bin/bash -c '/bin/systemctl --no-reload disable postgresql-init.service'
+RemainAfterExit=No
+
+[Install]
+WantedBy=multi-user.target

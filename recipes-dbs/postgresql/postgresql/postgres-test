@@ -1,0 +1,49 @@
+#!/bin/sh
+# stolen from postgresql-cheri
+
+BINDIR=%BINDIR%
+LIBDIR=%LIBDIR%
+PURECAPLD="LD_LIBRARY_PATH=${LIBDIR}"
+LD_CHERI_LIBRARY_PATH=${LIBDIR}
+
+POSTGRES_INSTANCE="/tmp/postgres-test-cheri/instance"
+
+PG_REGRESS=${LIBDIR}/postgresql/pgxs/src/test/regress/pg_regress
+
+SCHEDULE_NAME=${SCHEDULE_NAME:-serial_schedule}
+
+OUTPUT_DIR="/tmp/pg_test"
+
+rm -rf $OUTPUT_DIR
+
+mkdir -p $OUTPUT_DIR
+mkdir -p $OUTPUT_DIR/log
+mkdir -p $OUTPUT_DIR/sql
+mkdir -p $OUTPUT_DIR/expected
+mkdir -p $OUTPUT_DIR/results
+mkdir -p $OUTPUT_DIR/testtablespace
+mkdir -p $POSTGRES_INSTANCE
+
+cd $OUTPUT_DIR
+
+if "${PG_REGRESS}" "--inputdir=${LIBDIR}/postgresql/pgxs/src/test/regress" "--bindir=${BINDIR}" "--dlpath=${LIBDIR}"  "--schedule=${LIBDIR}/postgresql/pgxs/src/test/regress/${SCHEDULE_NAME}" "--outputdir=$OUTPUT_DIR" "--temp-instance=$POSTGRES_INSTANCE" "$@"
+then
+	echo "TESTS SUCCCEEDED"
+else
+	if [ "$?" = 1 ]; then
+		echo "TESTS UNSTABLE"
+		echo "CHECKING FOR ASSERTION FAILURES:"
+		grep TRAP "$OUTPUT_DIR/log/postmaster.log" || true
+		exit 0
+	else
+		echo "Got test failures, reading initdb log: $OUTPUT_DIR/log/initdb.log"
+		cat "$OUTPUT_DIR/log/initdb.log"
+		false
+	fi
+fi
+
+sudo cp /tmp/pg_test/regression.diffs regression.diffs
+sudo cp /tmp/pg_test/regression.out regression.out
+sudo cp -rf /tmp/pg_test/expected .
+sudo cp -rf /tmp/pg_test/results .
+sudo cp /tmp/pg_test/log/postmaster.log postmaster.log

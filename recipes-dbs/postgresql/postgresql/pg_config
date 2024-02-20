@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [[ "${1}" == "--includedir" ]]; then
+
+    echo "${STAGING_DIR_TARGET}${includedir}"
+
+elif [[ "${1}" == "--libdir" ]]; then
+
+    echo "${STAGING_DIR_TARGET}${libdir}"
+
+elif [[ "${1}" == "--version" ]]; then
+
+    echo "9.6"
+
+fi

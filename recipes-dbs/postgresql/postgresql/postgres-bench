@@ -1,0 +1,16 @@
+#!/bin/sh
+
+if [ -z "$1" ]; then
+    echo "Usage: ./postgres-bench.sh EXISTING_DB_NAME"
+    exit 1
+fi
+
+BINDIR=%BINDIR%
+LIBDIR=%LIBDIR%
+PURECAPLD="LD_LIBRARY_PATH=${LIBDIR}"
+DB_NAME=$1
+
+export ${PURECAPLD}
+
+${BINDIR}/pgbench -i ${DB_NAME} -U postgres
+${BINDIR}/pgbench -U postgres -c 2 -T 180 ${DB_NAME} 2>&1 | tee /tmp/pgbench-results.txt

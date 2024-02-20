@@ -1,0 +1,45 @@
+From daa2184cb2d3df09e1911402e768685ff456cc1f Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Fri, 10 Nov 2023 14:12:37 +0000
+Subject: [PATCH] port.h: change argument order to qsort_r to match posix
+
+The original codebase is aimed at FreeBSD OS.
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+
+---
+ src/include/port.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/src/include/port.h b/src/include/port.h
+index 10c8ba1194..bddb510e8a 100644
+--- a/src/include/port.h
++++ b/src/include/port.h
+@@ -440,7 +440,7 @@ extern void pg_qsort(void *base, size_t nel, size_t elsize,
+ /* Use ifdef FreeBSD and not __CHERI_PURE_CAPABILITY__ so that we use the same code path for MIPS and CHERI */
+ #ifdef __FreeBSD__
+ /* Postgres qsort_arg is broken for capabilities so we replace it with qsort_r but that uses a different parameter order for cmp */
+-typedef int (*qsort_arg_comparator) (void *arg, const void *a, const void *b);
++typedef int (*qsort_arg_comparator) (const void *a, const void *b, void *arg);
+ /*
+  * XXXAR: the postgres version of qsort_arg does not work with capabilities (swap
+  * is broken) so we have to make sure to use the libc function qsort_r instead
+@@ -448,15 +448,15 @@ typedef int (*qsort_arg_comparator) (void *arg, const void *a, const void *b);
+ static inline void
+ qsort_arg(void *a, size_t n, size_t es, qsort_arg_comparator cmp, void *arg)
+ {
+-	qsort_r(a, n, es, arg, cmp);
++	qsort_r(a, n, es, cmp, arg);
+ }
+ // NOTE: FreeBSD and Linux qsort_r are completely incompatible due to different argument order
+ // Generating a non-obvious function name avoids stupid errors like in tsrank.c where the function is then called wrongly
+ 
+ #define QSORT_ARG_COMPARATOR_FUNC(name, a, b) \
+-	int _##name##_freebsd_cmp(void *arg, const void *a, const void *b)
++	int _##name##_freebsd_cmp(const void *a, const void *b, void *arg)
+ #define QSORT_ARG_COMPARATOR_PTR(name) &_##name##_freebsd_cmp
+-#define CALL_QSORT_ARG_COMPARATOR(name, a, b, arg) _##name##_freebsd_cmp(arg, a, b)
++#define CALL_QSORT_ARG_COMPARATOR(name, a, b, arg) _##name##_freebsd_cmp(a, b, arg)
+ #else
+ /* #warning "Using postgres qsort" */
+ #define qsort(a,b,c,d) pg_qsort(a,b,c,d)
