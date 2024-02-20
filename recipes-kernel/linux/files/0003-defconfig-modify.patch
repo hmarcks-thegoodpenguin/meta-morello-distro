@@ -1,0 +1,38 @@
+From 2c53215daa9c483f823a9313243347394f8c40ae Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Mon, 24 Apr 2023 10:11:21 +0100
+Subject: [PATCH] defconfig: modify
+
+Add more debug.
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ arch/arm64/configs/morello_transitional_pcuabi_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm64/configs/morello_transitional_pcuabi_defconfig b/arch/arm64/configs/morello_transitional_pcuabi_defconfig
+index 515e50ce58aa..d19bbe4d1790 100644
+--- a/arch/arm64/configs/morello_transitional_pcuabi_defconfig
++++ b/arch/arm64/configs/morello_transitional_pcuabi_defconfig
+@@ -165,3 +165,18 @@ CONFIG_DEBUG_FS=y
+ # CONFIG_FTRACE is not set
+ CONFIG_CORESIGHT=y
+ CONFIG_MEMTEST=y
++
++CONFIG_FTRACE=y
++CONFIG_BOOTTIME_TRACING=y
++CONFIG_FUNCTION_TRACER=y
++CONFIG_STACK_TRACER=y
++CONFIG_IRQSOFF_TRACER=y
++CONFIG_PREEMPT_TRACER=y
++CONFIG_SCHED_TRACER=y
++CONFIG_HWLAT_TRACER=y
++CONFIG_OSNOISE_TRACER=y
++CONFIG_TIMERLAT_TRACER=y
++CONFIG_ENABLE_DEFAULT_TRACERS=y
++CONFIG_FTRACE_SYSCALLS=y
++CONFIG_TRACER_SNAPSHOT=y
++CONFIG_DYNAMIC_DEBUG=y
+-- 
+2.34.1
+

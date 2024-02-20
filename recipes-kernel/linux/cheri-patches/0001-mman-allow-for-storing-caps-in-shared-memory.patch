@@ -1,0 +1,30 @@
+From c3c49bd74d4d0b8b30c25841ba1ccca3fd3fe6b5 Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Thu, 20 Apr 2023 15:32:50 +0100
+Subject: [PATCH] mman: allow for storing caps in shared memory
+
+This is a temporary hack to keep the work with postgresql
+going. It does require for sharing pointers in this way.
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ arch/arm64/include/asm/mman.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/include/asm/mman.h b/arch/arm64/include/asm/mman.h
+index 39b1023ac9bc..ccea9fa3d3df 100644
+--- a/arch/arm64/include/asm/mman.h
++++ b/arch/arm64/include/asm/mman.h
+@@ -44,7 +44,8 @@ static inline unsigned long arch_calc_vm_flag_bits(unsigned long flags)
+ 	 * tags. Might need to explicitly allow or explicitly disallow certain
+ 	 * filesystems.
+ 	 */
+-	if (system_supports_morello() && ((flags & MAP_TYPE) == 0x02 /* MAP_PRIVATE */))
++	if (system_supports_morello() && ((flags & MAP_TYPE) == 0x02
++			|| (flags & MAP_TYPE) == 0x01 )) /* MAP_PRIVATE | MAP_SHARED */
+ 		ret |= VM_READ_CAPS | VM_WRITE_CAPS;
+ 
+ 	return ret;
+-- 
+2.34.1
+
