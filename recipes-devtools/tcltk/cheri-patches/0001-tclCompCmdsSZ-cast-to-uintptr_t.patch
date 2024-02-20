@@ -1,0 +1,28 @@
+From f184b339449f07e82a9c515a99e179fb7f602e8d Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Tue, 16 Jan 2024 12:51:08 +0000
+Subject: [PATCH] tclCompCmdsSZ: cheri provenance
+
+Cast int values that are used in pointer arithmetic to uintptr_t.
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ generic/tclCompCmdsSZ.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/generic/tclCompCmdsSZ.c b/generic/tclCompCmdsSZ.c
+index ddfe0dc..b48f2b6 100644
+--- a/generic/tclCompCmdsSZ.c
++++ b/generic/tclCompCmdsSZ.c
+@@ -2383,7 +2383,7 @@ IssueSwitchJumpTable(
+ 		 * point to here.
+ 		 */
+ 
+-		Tcl_SetHashValue(hPtr, CurrentOffset(envPtr) - jumpLocation);
++		Tcl_SetHashValue(hPtr, CurrentOffset(envPtr) - (uintptr_t)jumpLocation);
+ 	    }
+ 	    Tcl_DStringFree(&buffer);
+ 	} else {
+-- 
+2.34.1
+
