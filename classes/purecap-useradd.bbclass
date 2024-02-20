@@ -1,0 +1,1 @@
+DEPENDS += "base-passwd-morello"
