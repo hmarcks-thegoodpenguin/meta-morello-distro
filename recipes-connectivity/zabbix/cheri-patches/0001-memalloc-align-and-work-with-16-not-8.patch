@@ -1,0 +1,168 @@
+From ff061121e98773c7e144e884bf1f8fa96c5dd0a7 Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Mon, 13 Nov 2023 12:11:16 +0000
+Subject: [PATCH 1/7] memalloc: align and work with 16, not 8
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ include/memalloc.h            |  2 +-
+ src/libs/zbxmemory/memalloc.c | 42 ++++++++++++++++++++++-------------
+ 2 files changed, 28 insertions(+), 16 deletions(-)
+
+diff --git a/include/memalloc.h b/include/memalloc.h
+index 858c509..f449cd1 100644
+--- a/include/memalloc.h
++++ b/include/memalloc.h
+@@ -23,7 +23,7 @@
+ #include "common.h"
+ #include "mutexs.h"
+ 
+-#define MEM_MIN_ALLOC	24	/* should be a multiple of 8 and at least (2 * ZBX_PTR_SIZE) */
++#define MEM_MIN_ALLOC	(3*ZBX_PTR_SIZE)	/* should be a multiple of 8 and at least (2 * ZBX_PTR_SIZE) */
+ 
+ #define MEM_MIN_BUCKET_SIZE	MEM_MIN_ALLOC
+ #define MEM_MAX_BUCKET_SIZE	256 /* starting from this size all free chunks are put into the same bucket */
+diff --git a/src/libs/zbxmemory/memalloc.c b/src/libs/zbxmemory/memalloc.c
+index f3d9618..1d88dfd 100644
+--- a/src/libs/zbxmemory/memalloc.c
++++ b/src/libs/zbxmemory/memalloc.c
+@@ -92,6 +92,7 @@
+ 
+ static void	*ALIGN4(void *ptr);
+ static void	*ALIGN8(void *ptr);
++static void	*ALIGN16(void *ptr);
+ static void	*ALIGNPTR(void *ptr);
+ 
+ static zbx_uint64_t	mem_proper_alloc_size(zbx_uint64_t size);
+@@ -114,7 +115,7 @@ static void	*__mem_malloc(zbx_mem_info_t *info, zbx_uint64_t size);
+ static void	*__mem_realloc(zbx_mem_info_t *info, void *old, zbx_uint64_t size);
+ static void	__mem_free(zbx_mem_info_t *info, void *ptr);
+ 
+-#define MEM_SIZE_FIELD		sizeof(zbx_uint64_t)
++#define MEM_SIZE_FIELD		(ZBX_PTR_SIZE)
+ 
+ #define MEM_FLG_USED		((__UINT64_C(1))<<63)
+ 
+@@ -136,19 +137,30 @@ static void	*ALIGN8(void *ptr)
+ 	return (void *)((uintptr_t)((char *)ptr + 7) & (uintptr_t)~7);
+ }
+ 
++static void	*ALIGN16(void *ptr)
++{
++#if __has_builtin(__builtin_align_up)
++	return __builtin_align_up(ptr, 16);
++#else
++	return (void *)((uintptr_t)((char *)ptr + 15) & (uintptr_t)~15);
++#endif
++}
++
+ static void	*ALIGNPTR(void *ptr)
+ {
+ 	if (4 == ZBX_PTR_SIZE)
+ 		return ALIGN4(ptr);
+ 	if (8 == ZBX_PTR_SIZE)
+ 		return ALIGN8(ptr);
++	if (16 == ZBX_PTR_SIZE)
++		return ALIGN16(ptr);
+ 	assert(0);
+ }
+ 
+ static zbx_uint64_t	mem_proper_alloc_size(zbx_uint64_t size)
+ {
+ 	if (size >= MEM_MIN_ALLOC)
+-		return size + ((8 - (size & 7)) & 7);	/* allocate in multiples of 8... */
++		return size + ((16 - (size & 15)) & 15);	/* allocate in multiples of 16... */
+ 	else
+ 		return MEM_MIN_ALLOC;			/* ...and at least MEM_MIN_ALLOC */
+ }
+@@ -158,7 +170,7 @@ static int	mem_bucket_by_size(zbx_uint64_t size)
+ 	if (size < MEM_MIN_BUCKET_SIZE)
+ 		return 0;
+ 	if (size < MEM_MAX_BUCKET_SIZE)
+-		return (size - MEM_MIN_BUCKET_SIZE) >> 3;
++		return (size - MEM_MIN_BUCKET_SIZE) >> 4;
+ 	return MEM_BUCKET_COUNT - 1;
+ }
+ 
+@@ -196,7 +208,7 @@ static void	mem_set_next_chunk(void *chunk, void *next)
+ 
+ static void	**mem_ptr_to_prev_field(void *chunk)
+ {
+-	return (NULL != chunk ? (void **)((char *)chunk + MEM_SIZE_FIELD) : NULL);
++	return (NULL != chunk ? (void **)((char *)chunk + MEM_SIZE_FIELD) : (uintptr_t)NULL);
+ }
+ 
+ static void	**mem_ptr_to_next_field(void *chunk, void **first_chunk)
+@@ -545,9 +557,9 @@ int	zbx_mem_create(zbx_mem_info_t **info, zbx_uint64_t size, const char *descr,
+ 
+ 	/* allocate shared memory */
+ 
+-	if (4 != ZBX_PTR_SIZE && 8 != ZBX_PTR_SIZE)
++	if (4 != ZBX_PTR_SIZE && 8 != ZBX_PTR_SIZE && 16 != ZBX_PTR_SIZE)
+ 	{
+-		*error = zbx_dsprintf(*error, "failed assumption about pointer size (" ZBX_FS_SIZE_T " not in {4, 8})",
++		*error = zbx_dsprintf(*error, "failed assumption about pointer size (" ZBX_FS_SIZE_T " not in {4, 8, 16})",
+ 				(zbx_fs_size_t)ZBX_PTR_SIZE);
+ 		goto out;
+ 	}
+@@ -579,7 +591,7 @@ int	zbx_mem_create(zbx_mem_info_t **info, zbx_uint64_t size, const char *descr,
+ 
+ 	/* allocate zbx_mem_info_t structure, its buckets, and description inside shared memory */
+ 
+-	*info = (zbx_mem_info_t *)ALIGN8(base);
++	*info = (zbx_mem_info_t *)ALIGN16(base);
+ 	(*info)->shm_id = shm_id;
+ 	(*info)->orig_size = size;
+ 	size -= (char *)(*info + 1) - (char *)base;
+@@ -604,8 +616,8 @@ int	zbx_mem_create(zbx_mem_info_t **info, zbx_uint64_t size, const char *descr,
+ 	(*info)->allow_oom = allow_oom;
+ 
+ 	/* prepare shared memory for further allocation by creating one big chunk */
+-	(*info)->lo_bound = ALIGN8(base);
+-	(*info)->hi_bound = ALIGN8((char *)base + size - 8);
++	(*info)->lo_bound = ALIGN16(base);
++	(*info)->hi_bound = ALIGN16((char *)base + size - 16);
+ 
+ 	(*info)->total_size = (zbx_uint64_t)((char *)((*info)->hi_bound) - (char *)((*info)->lo_bound) -
+ 			2 * MEM_SIZE_FIELD);
+@@ -613,8 +625,8 @@ int	zbx_mem_create(zbx_mem_info_t **info, zbx_uint64_t size, const char *descr,
+ 	index = mem_bucket_by_size((*info)->total_size);
+ 	(*info)->buckets[index] = (*info)->lo_bound;
+ 	mem_set_chunk_size((*info)->buckets[index], (*info)->total_size);
+-	mem_set_prev_chunk((*info)->buckets[index], NULL);
+-	mem_set_next_chunk((*info)->buckets[index], NULL);
++	mem_set_prev_chunk((*info)->buckets[index], (void*)(uintptr_t)NULL);
++	mem_set_next_chunk((*info)->buckets[index], (void*)(uintptr_t)NULL);
+ 
+ 	(*info)->used_size = 0;
+ 	(*info)->free_size = (*info)->total_size;
+@@ -776,7 +788,7 @@ void	zbx_mem_dump_stats(int level, zbx_mem_info_t *info)
+ 			continue;
+ 
+ 		zabbix_log(level, "free chunks of size %2s %3d bytes: %8u", i == MEM_BUCKET_COUNT - 1 ? ">=" : "",
+-			MEM_MIN_BUCKET_SIZE + 8 * i, stats.chunks_num[i]);
++			MEM_MIN_BUCKET_SIZE + 16 * i, stats.chunks_num[i]);
+ 	}
+ 
+ 	zabbix_log(level, "min chunk size: %10llu bytes", (unsigned long long)stats.min_chunk_size);
+@@ -806,14 +818,14 @@ size_t	zbx_mem_required_size(int chunks_num, const char *descr, const char *para
+ 	/* that we will be able to get ourselves 'chunks_num' pieces of memory with a */
+ 	/* total size of 'size', given that we also have to store 'descr' and 'param'? */
+ 
+-	size += 7;					/* ensure we allocate enough to 8-align zbx_mem_info_t */
++	size += 15;					/* ensure we allocate enough to 16-align zbx_mem_info_t */
+ 	size += sizeof(zbx_mem_info_t);
+ 	size += ZBX_PTR_SIZE - 1;			/* ensure we allocate enough to align bucket pointers */
+ 	size += ZBX_PTR_SIZE * MEM_BUCKET_COUNT;
+ 	size += strlen(descr) + 1;
+ 	size += strlen(param) + 1;
+-	size += (MEM_SIZE_FIELD - 1) + 8;		/* ensure we allocate enough to align the first chunk */
+-	size += (MEM_SIZE_FIELD - 1) + 8;		/* ensure we allocate enough to align right size field */
++	size += (MEM_SIZE_FIELD - 1) + 16;		/* ensure we allocate enough to align the first chunk */
++	size += (MEM_SIZE_FIELD - 1) + 16;		/* ensure we allocate enough to align right size field */
+ 
+ 	size += (chunks_num - 1) * MEM_SIZE_FIELD * 2;	/* each additional chunk requires 16 bytes of overhead */
+ 	size += chunks_num * (MEM_MIN_ALLOC - 1);	/* each chunk has size of at least MEM_MIN_ALLOC bytes */
+-- 
+2.34.1
+

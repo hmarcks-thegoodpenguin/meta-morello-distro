@@ -1,0 +1,85 @@
+From 309955f76bf0252ee73ca234d94d0419371d7e83 Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Mon, 27 Nov 2023 10:32:37 +0000
+Subject: [PATCH 4/7] embed: use padding of 16 not 8 for allocators
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ src/libs/zbxembed/embed.c | 22 ++++++++++++----------
+ 1 file changed, 12 insertions(+), 10 deletions(-)
+
+diff --git a/src/libs/zbxembed/embed.c b/src/libs/zbxembed/embed.c
+index 0e1b349..23b0d47 100644
+--- a/src/libs/zbxembed/embed.c
++++ b/src/libs/zbxembed/embed.c
+@@ -28,8 +28,10 @@
+ 
+ #include "duktape.h"
+ 
+-#define ZBX_ES_MEMORY_LIMIT	(1024 * 1024 * 64)
+-#define ZBX_ES_STACK_LIMIT	1000
++#define ZBX_ES_MEMORY_LIMIT	(1024 * 1024 * 128)
++#define ZBX_ES_STACK_LIMIT	(1000*2)
++
++#define ZBX_ES_PAD			(16)
+ 
+ /* maximum number of consequent runtime errors after which it's treated as fatal error */
+ #define ZBX_ES_MAX_CONSEQUENT_RT_ERROR	3
+@@ -64,7 +66,7 @@ static void	*es_malloc(void *udata, duk_size_t size)
+ 	zbx_es_env_t	*env = (zbx_es_env_t *)udata;
+ 	uint64_t	*uptr;
+ 
+-	if (env->total_alloc + size + 8 > ZBX_ES_MEMORY_LIMIT)
++	if (env->total_alloc + size + ZBX_ES_PAD > ZBX_ES_MEMORY_LIMIT)
+ 	{
+ 		if (NULL == env->ctx)
+ 			env->error = zbx_strdup(env->error, "cannot allocate memory");
+@@ -72,8 +74,8 @@ static void	*es_malloc(void *udata, duk_size_t size)
+ 		return NULL;
+ 	}
+ 
+-	env->total_alloc += (size + 8);
+-	uptr = zbx_malloc(NULL, size + 8);
++	env->total_alloc += (size + ZBX_ES_PAD);
++	uptr = zbx_malloc(NULL, size + ZBX_ES_PAD);
+ 	*uptr++ = size;
+ 
+ 	return uptr;
+@@ -88,12 +90,12 @@ static void	*es_realloc(void *udata, void *ptr, duk_size_t size)
+ 	if (NULL != uptr)
+ 	{
+ 		--uptr;
+-		old_size = *uptr + 8;
++		old_size = *uptr + ZBX_ES_PAD;
+ 	}
+ 	else
+ 		old_size = 0;
+ 
+-	if (env->total_alloc + size + 8 - old_size > ZBX_ES_MEMORY_LIMIT)
++	if (env->total_alloc + size + ZBX_ES_PAD - old_size > ZBX_ES_MEMORY_LIMIT)
+ 	{
+ 		if (NULL == env->ctx)
+ 			env->error = zbx_strdup(env->error, "cannot allocate memory");
+@@ -101,8 +103,8 @@ static void	*es_realloc(void *udata, void *ptr, duk_size_t size)
+ 		return NULL;
+ 	}
+ 
+-	env->total_alloc += size + 8 - old_size;
+-	uptr = zbx_realloc(uptr, size + 8);
++	env->total_alloc += size + ZBX_ES_PAD - old_size;
++	uptr = zbx_realloc(uptr, size + ZBX_ES_PAD);
+ 	*uptr++ = size;
+ 
+ 	return uptr;
+@@ -115,7 +117,7 @@ static void	es_free(void *udata, void *ptr)
+ 
+ 	if (NULL != ptr)
+ 	{
+-		env->total_alloc -= (*(--uptr) + 8);
++		env->total_alloc -= (*(--uptr) + ZBX_ES_PAD);
+ 		zbx_free(uptr);
+ 	}
+ }
+-- 
+2.34.1
+

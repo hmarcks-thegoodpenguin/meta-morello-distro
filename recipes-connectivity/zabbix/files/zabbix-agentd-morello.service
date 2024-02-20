@@ -1,0 +1,15 @@
+[Unit]
+Description=Zabbix Agent
+
+[Service]
+Environment="CONFFILE=%SYSCONFDIR%/zabbix/zabbix-agentd.conf"
+EnvironmentFile=-%SYSCONFDIR%/default/zabbix-agent
+Type=forking
+Restart=on-failure
+KillMode=control-group
+ExecStart=/bin/bash -c '%SBINDIR%/zabbix_agentd -c $CONFFILE'
+ExecStop=/bin/sh -c '[ -n "$1" ] && kill -s TERM "$1"' -- "$MAINPID"
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

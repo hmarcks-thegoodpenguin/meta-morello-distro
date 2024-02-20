@@ -1,0 +1,64 @@
+From ca89c8d2ae32f4ecfbcfe5be59acfd6e1ecaf16e Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Tue, 28 Nov 2023 16:37:48 +0000
+Subject: [PATCH 7/7] duk_api_stack: fix stack reallocation
+
+The ptr_diff is taken between the post reallocation new_valstack pointer
+and pre-allocation thr->valstack pointer variables and then added to the
+old base pointer. This will not work in CHERI and is also not officialy
+supported by the C standard.
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ src/libs/zbxembed/duktape.c | 24 +++++++++++++++++-------
+ 1 file changed, 17 insertions(+), 7 deletions(-)
+
+diff --git a/src/libs/zbxembed/duktape.c b/src/libs/zbxembed/duktape.c
+index 6611a6e..425bf43 100644
+--- a/src/libs/zbxembed/duktape.c
++++ b/src/libs/zbxembed/duktape.c
+@@ -19380,7 +19380,10 @@ DUK_LOCAL DUK_COLD DUK_NOINLINE duk_bool_t duk__resize_valstack(duk_hthread *thr
+ 	duk_tval *pre_top;
+ 	duk_tval *pre_end;
+ 	duk_tval *pre_alloc_end;
+-	duk_ptrdiff_t ptr_diff;
++	duk_ptrdiff_t diff_bottom;
++	duk_ptrdiff_t diff_top;
++	duk_ptrdiff_t diff_end;
++	duk_ptrdiff_t diff_alloc_end;
+ 	duk_tval *new_valstack;
+ 	duk_size_t new_alloc_size;
+ 	duk_tval *tv_prev_alloc_end;
+@@ -19476,16 +19479,23 @@ DUK_LOCAL DUK_COLD DUK_NOINLINE duk_bool_t duk__resize_valstack(duk_hthread *thr
+ 	DUK_ASSERT(thr->valstack_alloc_end >= thr->valstack_end);
+ 
+ 	/* Write new pointers.  Most pointers can be handled as a pointer
+-	 * difference.
++	 * difference.
+ 	 */
+-	ptr_diff = (duk_ptrdiff_t) ((duk_uint8_t *) new_valstack - (duk_uint8_t *) thr->valstack);
+-	tv_prev_alloc_end = (duk_tval *) (void *) ((duk_uint8_t *) thr->valstack_alloc_end + ptr_diff);
++
++	diff_bottom = (duk_ptrdiff_t) ((duk_uint8_t *) thr->valstack_bottom - (duk_uint8_t *) thr->valstack);
++	diff_top = (duk_ptrdiff_t) ((duk_uint8_t *) thr->valstack_top - (duk_uint8_t *) thr->valstack);
++	diff_end = (duk_ptrdiff_t) ((duk_uint8_t *) thr->valstack_end - (duk_uint8_t *) thr->valstack);
++	diff_alloc_end = (duk_ptrdiff_t) ((duk_uint8_t *) thr->valstack_alloc_end - (duk_uint8_t *) thr->valstack);
++	tv_prev_alloc_end = (duk_tval *) (void *) ((duk_uint8_t *) new_valstack + diff_alloc_end);
++
+ 	thr->valstack = new_valstack;
+-	thr->valstack_bottom = (duk_tval *) (void *) ((duk_uint8_t *) thr->valstack_bottom + ptr_diff);
+-	thr->valstack_top = (duk_tval *) (void *) ((duk_uint8_t *) thr->valstack_top + ptr_diff);
+-	thr->valstack_end = (duk_tval *) (void *) ((duk_uint8_t *) thr->valstack_end + ptr_diff);
++
++	thr->valstack_bottom = (duk_tval *) (void *) ((duk_uint8_t *) new_valstack + diff_bottom);
++	thr->valstack_top = (duk_tval *) (void *) ((duk_uint8_t *) new_valstack + diff_top);
++	thr->valstack_end = (duk_tval *) (void *) ((duk_uint8_t *) new_valstack + diff_end);
+ 	thr->valstack_alloc_end = (duk_tval *) (void *) ((duk_uint8_t *) new_valstack + new_alloc_size);
+ 
++
+ 	/* Assertions: pointer sanity after pointer updates. */
+ 	DUK_ASSERT(thr->valstack_bottom >= thr->valstack);
+ 	DUK_ASSERT(thr->valstack_top >= thr->valstack_bottom);
+-- 
+2.34.1
+

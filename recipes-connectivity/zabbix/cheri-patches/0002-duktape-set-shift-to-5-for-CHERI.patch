@@ -1,0 +1,55 @@
+From 564a236360252558b2ac360e30d5d141b8c8ed1a Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Tue, 28 Nov 2023 10:43:58 +0000
+Subject: [PATCH 2/7] duktape: set shift to 5 for CHERI
+
+The duk_tval struct is of size 5 now
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ src/libs/zbxembed/duktape.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/src/libs/zbxembed/duktape.c b/src/libs/zbxembed/duktape.c
+index da87cb0..e3b439f 100644
+--- a/src/libs/zbxembed/duktape.c
++++ b/src/libs/zbxembed/duktape.c
+@@ -51113,6 +51113,11 @@ duk_heap *duk_heap_alloc(duk_alloc_function alloc_func,
+ 	 * This will be optimized away in practice; unfortunately a
+ 	 * warning is generated on some compilers as a result.
+ 	 */
++#ifdef __CHERI_PURE_CAPABILITY__
++	if (sizeof(duk_tval) != 32) {
++		fatal_func(heap_udata, "sizeof(duk_tval) not 32, cannot use DUK_USE_EXEC_REGCONST_OPTIMIZE option");
++	}
++#else
+ #if defined(DUK_USE_PACKED_TVAL)
+ 	if (sizeof(duk_tval) != 8) {
+ #else
+@@ -51120,6 +51125,7 @@ duk_heap *duk_heap_alloc(duk_alloc_function alloc_func,
+ #endif
+ 		fatal_func(heap_udata, "sizeof(duk_tval) not 8 or 16, cannot use DUK_USE_EXEC_REGCONST_OPTIMIZE option");
+ 	}
++#endif
+ #endif /* DUK_USE_EXEC_REGCONST_OPTIMIZE */
+ 
+ 	/*
+@@ -79960,11 +79966,15 @@ DUK_LOCAL duk_bool_t duk__executor_handle_call(duk_hthread *thr, duk_idx_t idx,
+ #define DUK__RCBIT_B DUK_BC_REGCONST_B
+ #define DUK__RCBIT_C DUK_BC_REGCONST_C
+ #if defined(DUK_USE_EXEC_REGCONST_OPTIMIZE)
++#ifdef __CHERI_PURE_CAPABILITY__
++#define DUK__TVAL_SHIFT 5 /* sizeof(duk_tval) == 32 */
++#else
+ #if defined(DUK_USE_PACKED_TVAL)
+ #define DUK__TVAL_SHIFT 3 /* sizeof(duk_tval) == 8 */
+ #else
+ #define DUK__TVAL_SHIFT 4 /* sizeof(duk_tval) == 16; not always the case so also asserted for */
+ #endif
++#endif
+ #define DUK__SHIFT_A         (DUK_BC_SHIFT_A - DUK__TVAL_SHIFT)
+ #define DUK__SHIFT_B         (DUK_BC_SHIFT_B - DUK__TVAL_SHIFT)
+ #define DUK__SHIFT_C         (DUK_BC_SHIFT_C - DUK__TVAL_SHIFT)
+-- 
+2.34.1
+

@@ -1,0 +1,46 @@
+From ce62aabf204b39cde2dae5e62a7ff0d5cc3236b8 Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Tue, 28 Nov 2023 08:18:20 +0000
+Subject: [PATCH 6/7] duk_config: use debug and self test
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ src/libs/zbxembed/duk_config.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/src/libs/zbxembed/duk_config.h b/src/libs/zbxembed/duk_config.h
+index e336fa7..90e6b7a 100644
+--- a/src/libs/zbxembed/duk_config.h
++++ b/src/libs/zbxembed/duk_config.h
+@@ -2938,7 +2938,7 @@ typedef struct duk_hthread duk_context;
+ #undef DUK_USE_DATE_GET_NOW
+ #undef DUK_USE_DATE_PARSE_STRING
+ #undef DUK_USE_DATE_PRS_GETDATE
+-#undef DUK_USE_DEBUG
++#define DUK_USE_DEBUG
+ #undef DUK_USE_DEBUGGER_DUMPHEAP
+ #undef DUK_USE_DEBUGGER_INSPECT
+ #undef DUK_USE_DEBUGGER_PAUSE_UNCAUGHT
+@@ -2946,8 +2946,8 @@ typedef struct duk_hthread duk_context;
+ #define DUK_USE_DEBUGGER_THROW_NOTIFY
+ #undef DUK_USE_DEBUGGER_TRANSPORT_TORTURE
+ #define DUK_USE_DEBUG_BUFSIZE 65536L
+-#define DUK_USE_DEBUG_LEVEL 0
+-#undef DUK_USE_DEBUG_WRITE
++#define DUK_USE_DEBUG_LEVEL 1
++#define DUK_USE_DEBUG_WRITE
+ #define DUK_USE_DOUBLE_LINKED_HEAP
+ #define DUK_USE_DUKTAPE_BUILTIN
+ #define DUK_USE_ENCODING_BUILTINS
+@@ -3063,7 +3063,7 @@ typedef struct duk_hthread duk_context;
+ #define DUK_USE_ROM_PTRCOMP_FIRST 63488L
+ #undef DUK_USE_ROM_STRINGS
+ #define DUK_USE_SECTION_B
+-#undef DUK_USE_SELF_TESTS
++#define DUK_USE_SELF_TESTS
+ #define DUK_USE_SHEBANG_COMMENTS
+ #undef DUK_USE_SHUFFLE_TORTURE
+ #define DUK_USE_SOURCE_NONBMP
+-- 
+2.34.1
+

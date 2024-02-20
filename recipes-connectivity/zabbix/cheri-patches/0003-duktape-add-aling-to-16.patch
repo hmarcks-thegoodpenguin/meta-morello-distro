@@ -1,0 +1,121 @@
+From de0a642da6f8fe57f0174c6e11d3c75152869041 Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Tue, 28 Nov 2023 14:02:26 +0000
+Subject: [PATCH 3/7] duktape: add aling to 16
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ src/libs/zbxembed/duk_config.h |  4 +++-
+ src/libs/zbxembed/duktape.c    | 25 +++++++++++++++++++++++++
+ 2 files changed, 28 insertions(+), 1 deletion(-)
+
+diff --git a/src/libs/zbxembed/duk_config.h b/src/libs/zbxembed/duk_config.h
+index e172f6a..e336fa7 100644
+--- a/src/libs/zbxembed/duk_config.h
++++ b/src/libs/zbxembed/duk_config.h
+@@ -2590,6 +2590,8 @@ typedef struct duk_hthread duk_context;
+  *  compiler/architecture specific.
+  */
+ 
++#define DUK_USE_ALIGN_BY 16
++
+ /* If not forced, use safe default for alignment. */
+ #if !defined(DUK_USE_ALIGN_BY)
+ #define DUK_USE_ALIGN_BY 8
+@@ -2969,7 +2971,7 @@ typedef struct duk_hthread duk_context;
+ #undef DUK_USE_EXEC_PREFER_SIZE
+ #define DUK_USE_EXEC_REGCONST_OPTIMIZE
+ #undef DUK_USE_EXEC_TIMEOUT_CHECK
+-#undef DUK_USE_EXPLICIT_NULL_INIT
++#define DUK_USE_EXPLICIT_NULL_INIT
+ #undef DUK_USE_EXTSTR_FREE
+ #undef DUK_USE_EXTSTR_INTERN_CHECK
+ #undef DUK_USE_FASTINT
+diff --git a/src/libs/zbxembed/duktape.c b/src/libs/zbxembed/duktape.c
+index e3b439f..6611a6e 100644
+--- a/src/libs/zbxembed/duktape.c
++++ b/src/libs/zbxembed/duktape.c
+@@ -6933,6 +6933,8 @@ DUK_INTERNAL_DECL void duk_hobject_assert_valid(duk_hobject *h);
+ #define DUK_HOBJECT_E_FLAG_PADDING(e_sz) ((8 - (e_sz)) & 0x07)
+ #elif (DUK_USE_ALIGN_BY == 1)
+ #define DUK_HOBJECT_E_FLAG_PADDING(e_sz) 0
++#elif (DUK_USE_ALIGN_BY == 16)
++#define DUK_HOBJECT_E_FLAG_PADDING(e_sz) ((16 - (e_sz)) & 0xF)
+ #else
+ #error invalid DUK_USE_ALIGN_BY
+ #endif
+@@ -7242,6 +7244,8 @@ DUK_INTERNAL_DECL void duk_hobject_assert_valid(duk_hobject *h);
+ #define DUK_HOBJECT_ALIGN_TARGET 8
+ #elif (DUK_USE_ALIGN_BY == 1)
+ #define DUK_HOBJECT_ALIGN_TARGET 1
++#elif (DUK_USE_ALIGN_BY == 16)
++#define DUK_HOBJECT_ALIGN_TARGET 16
+ #else
+ #error invalid DUK_USE_ALIGN_BY
+ #endif
+@@ -8793,6 +8797,9 @@ struct duk_hbuffer {
+ #if (DUK_USE_ALIGN_BY == 8) && defined(DUK_USE_PACK_MSVC_PRAGMA)
+ #pragma pack(push, 8)
+ #endif
++#if (DUK_USE_ALIGN_BY == 16) && defined(DUK_USE_PACK_MSVC_PRAGMA)
++#pragma pack(push, 16)
++#endif
+ struct duk_hbuffer_fixed {
+ 	/* A union is used here as a portable struct size / alignment trick:
+ 	 * by adding a 32-bit or a 64-bit (unused) union member, the size of
+@@ -8813,9 +8820,15 @@ struct duk_hbuffer_fixed {
+ 		duk_uint32_t dummy_for_align4;
+ #elif (DUK_USE_ALIGN_BY == 8)
+ 		duk_double_t dummy_for_align8_1;
++#elif (DUK_USE_ALIGN_BY == 16)
++		duk_uint8_t dummy_for_align16_1[16];
+ #if defined(DUK_USE_64BIT_OPS)
++#if (DUK_USE_ALIGN_BY == 16)
++		duk_uint64_t dummy_for_align16_2[2];
++#else
+ 		duk_uint64_t dummy_for_align8_2;
+ #endif
++#endif
+ #elif (DUK_USE_ALIGN_BY == 1)
+ 		/* no extra padding */
+ #else
+@@ -8840,10 +8853,16 @@ struct duk_hbuffer_fixed {
+ __attribute__((aligned(8)))
+ #elif (DUK_USE_ALIGN_BY == 8) && defined(DUK_USE_PACK_CLANG_ATTR)
+ __attribute__((aligned(8)))
++#elif (DUK_USE_ALIGN_BY == 16) && defined(DUK_USE_PACK_GCC_ATTR)
++__attribute__((aligned(16)))
++#elif (DUK_USE_ALIGN_BY == 16) && defined(DUK_USE_PACK_CLANG_ATTR)
++__attribute__((aligned(16)))
+ #endif
+ ;
+ #if (DUK_USE_ALIGN_BY == 8) && defined(DUK_USE_PACK_MSVC_PRAGMA)
+ #pragma pack(pop)
++#elif (DUK_USE_ALIGN_BY == 16) && defined(DUK_USE_PACK_MSVC_PRAGMA)
++#pragma pack(pop)
+ #endif
+ 
+ /* Dynamic buffer with 'curr_alloc' pointing to a dynamic area allocated using
+@@ -65392,6 +65411,8 @@ DUK_INTERNAL void duk_hthread_create_builtin_objects(duk_hthread *thr) {
+ 	                "a8"
+ #elif (DUK_USE_ALIGN_BY == 1)
+ 	                "a1"
++#elif (DUK_USE_ALIGN_BY == 16)
++	                "a16"
+ #else
+ #error invalid DUK_USE_ALIGN_BY
+ #endif
+@@ -93466,6 +93487,10 @@ DUK_LOCAL duk_uint_t duk__selftest_struct_align(void) {
+ 	if ((sizeof(duk_hbuffer_fixed) % 8) != 0) {
+ 		DUK__FAILED("sizeof(duk_hbuffer_fixed) not aligned to 8");
+ 	}
++#elif (DUK_USE_ALIGN_BY == 16)
++	if ((sizeof(duk_hbuffer_fixed) % 16) != 0) {
++		DUK__FAILED("sizeof(duk_hbuffer_fixed) not aligned to 16");
++	}
+ #elif (DUK_USE_ALIGN_BY == 1)
+ 	/* no check */
+ #else
+-- 
+2.34.1
+

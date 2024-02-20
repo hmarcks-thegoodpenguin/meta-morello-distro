@@ -1,0 +1,15 @@
+[Unit]
+Description=Zabbix Proxy
+
+[Service]
+Environment="CONFFILE=%ZABBIX_PROXY_CONF%"
+EnvironmentFile=-%SYSCONFDIR%/default/zabbix-proxy
+Type=forking
+Restart=on-failure
+KillMode=control-group
+ExecStart=%SBINDIR%/zabbix_proxy -c $CONFFILE
+ExecStop=/bin/sh -c '[ -n "$1" ] && kill -s TERM "$1"' -- "$MAINPID"
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target
