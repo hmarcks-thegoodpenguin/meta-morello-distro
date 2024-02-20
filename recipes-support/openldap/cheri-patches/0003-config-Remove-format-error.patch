@@ -1,0 +1,42 @@
+From 9d3e1f69ccd087fb219bebd578252aafc82f224a Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Fri, 7 Jul 2023 09:37:26 +0100
+Subject: [PATCH 3/7] config: Remove format error.
+
+Cast to unsigned char *
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ servers/lloadd/config.c | 2 +-
+ servers/slapd/config.c  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/servers/lloadd/config.c b/servers/lloadd/config.c
+index 12b4406..56a69ca 100644
+--- a/servers/lloadd/config.c
++++ b/servers/lloadd/config.c
+@@ -2113,7 +2113,7 @@ lload_config_find_keyword( ConfigTable *Conf, ConfigArgs *c )
+         size_t decode_len = LUTIL_BASE64_DECODE_LEN( c->linelen );
+         ch_free( c->tline );
+         c->tline = ch_malloc( decode_len + 1 );
+-        c->linelen = lutil_b64_pton( c->line, c->tline, decode_len );
++        c->linelen = lutil_b64_pton( c->line, (unsigned char *)c->tline, decode_len );
+         if ( c->linelen < 0 ) {
+             ch_free( c->tline );
+             c->tline = NULL;
+diff --git a/servers/slapd/config.c b/servers/slapd/config.c
+index 8823c74..3ae7d1f 100644
+--- a/servers/slapd/config.c
++++ b/servers/slapd/config.c
+@@ -134,7 +134,7 @@ ConfigTable *config_find_keyword(ConfigTable *Conf, ConfigArgs *c) {
+ 		size_t decode_len = LUTIL_BASE64_DECODE_LEN(c->linelen);
+ 		ch_free( c->tline );
+ 		c->tline = ch_malloc( decode_len+1 );
+-		c->linelen = lutil_b64_pton( c->line, c->tline, decode_len );
++		c->linelen = lutil_b64_pton( c->line, (unsigned char *)c->tline, decode_len );
+ 		if ( c->linelen < 0 )
+ 		{
+ 			ch_free( c->tline );
+-- 
+2.34.1
+

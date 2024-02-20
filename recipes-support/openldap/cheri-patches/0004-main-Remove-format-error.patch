@@ -1,0 +1,28 @@
+From ace0b9cd1c47662133e599a2f77597dfd184a5d0 Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Fri, 7 Jul 2023 09:47:39 +0100
+Subject: [PATCH 4/7] main: Remove format error.
+
+cast to unsigned int
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ servers/slapd/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/servers/slapd/main.c b/servers/slapd/main.c
+index 11e7a8f..6f69087 100644
+--- a/servers/slapd/main.c
++++ b/servers/slapd/main.c
+@@ -396,7 +396,7 @@ static void debug_print( const char *data )
+ 
+ 	buf[sizeof(buf)-1] = '\0';
+ 	snprintf( buf, sizeof(buf)-1, "%lx." TS " %p %s",
+-		(long)tv.tv_sec, Tfrac, (void *)ldap_pvt_thread_self(), data );
++		(long)tv.tv_sec, (unsigned int)Tfrac, (void *)ldap_pvt_thread_self(), data );
+ 	ber_logger( buf );
+ }
+ 
+-- 
+2.34.1
+

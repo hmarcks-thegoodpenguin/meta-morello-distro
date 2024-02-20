@@ -1,0 +1,807 @@
+From f3bf7b22898961bb1ff3bdc0fe7d24a1ee1b8e6e Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Thu, 6 Jul 2023 17:19:19 +0100
+Subject: [PATCH 1/7] config: fix provenance errors
+
+Cast to uintptr_t.
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ build/openldap.m4 |  13 +++-
+ configure         | 189 ++++++++++++++++++++++++++++++++++++++--------
+ configure.ac      |   9 +++
+ 3 files changed, 176 insertions(+), 35 deletions(-)
+
+diff --git a/build/openldap.m4 b/build/openldap.m4
+index c7fa19e..6945c1d 100644
+--- a/build/openldap.m4
++++ b/build/openldap.m4
+@@ -296,6 +296,9 @@ dnl --------------------------------------------------------------------
+ AC_DEFUN([OL_PTHREAD_TEST_INCLUDES], [[
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -306,7 +309,7 @@ AC_DEFUN([OL_PTHREAD_TEST_INCLUDES], [[
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ ]])
+ AC_DEFUN([OL_PTHREAD_TEST_FUNCTION],[[
+@@ -407,6 +410,9 @@ AC_DEFUN([OL_HEADER_GNU_PTH_PTHREAD_H], [
+ 		[ol_cv_header_gnu_pth_pthread_h],
+ 		[AC_EGREP_CPP(__gnu_pth__,
+ 			[#include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #ifdef _POSIX_THREAD_IS_GNU_PTH
+ 	__gnu_pth__;
+ #endif
+@@ -437,7 +443,10 @@ AC_DEFUN([OL_HEADER_LINUX_THREADS], [
+ 	AC_CACHE_CHECK([for LinuxThreads pthread.h],
+ 		[ol_cv_header_linux_threads],
+ 		[AC_EGREP_CPP(pthread_kill_other_threads_np,
+-			[#include <pthread.h>],
++			[#include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++],
+ 			[ol_cv_header_linux_threads=yes],
+ 			[ol_cv_header_linux_threads=no])
+ 		])
+diff --git a/configure b/configure
+index bea23a1..7236a75 100755
+--- a/configure
++++ b/configure
+@@ -17688,6 +17688,9 @@ if ac_fn_c_try_compile "$LINENO"; then :
+ 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ 
+ _ACEOF
+ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+@@ -17717,6 +17720,9 @@ else
+ 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ 
+ _ACEOF
+ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+@@ -17777,6 +17783,9 @@ else
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ _ACEOF
+ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+   $EGREP "pthread_kill_other_threads_np" >/dev/null 2>&1; then :
+@@ -17805,6 +17814,9 @@ else
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #ifdef _POSIX_THREAD_IS_GNU_PTH
+ 	__gnu_pth__;
+ #endif
+@@ -17852,6 +17864,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -17862,7 +17877,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -17932,6 +17947,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -17942,7 +17960,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -18037,6 +18055,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -18047,7 +18068,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -18117,6 +18138,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -18127,7 +18151,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -18227,6 +18251,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -18237,7 +18264,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -18307,6 +18334,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -18317,7 +18347,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -18417,6 +18447,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -18427,7 +18460,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -18497,6 +18530,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -18507,7 +18543,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -18607,6 +18643,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -18617,7 +18656,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -18687,6 +18726,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -18697,7 +18739,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -18797,6 +18839,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -18807,7 +18852,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -18877,6 +18922,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -18887,7 +18935,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -18988,6 +19036,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -18998,7 +19049,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -19068,6 +19119,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -19078,7 +19132,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -19178,6 +19232,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -19188,7 +19245,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -19258,6 +19315,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -19268,7 +19328,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -19369,6 +19429,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -19379,7 +19442,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -19449,6 +19512,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -19459,7 +19525,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -19560,6 +19626,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -19570,7 +19639,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -19640,6 +19709,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -19650,7 +19722,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -19750,6 +19822,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -19760,7 +19835,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -19830,6 +19905,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -19840,7 +19918,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -19941,6 +20019,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -19951,7 +20032,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -20021,6 +20102,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -20031,7 +20115,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -20132,6 +20216,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -20142,7 +20229,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -20212,6 +20299,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -20222,7 +20312,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -20322,6 +20412,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -20332,7 +20425,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -20402,6 +20495,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -20412,7 +20508,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -20512,6 +20608,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -20522,7 +20621,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -20592,6 +20691,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -20602,7 +20704,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -20703,6 +20805,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -20713,7 +20818,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ int
+@@ -20783,6 +20888,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -20793,7 +20901,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -20974,6 +21082,9 @@ else
+ /* end confdefs.h.  */
+ 
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ pthread_rwlock_t rwlock;
+ 
+ int
+@@ -21011,6 +21122,9 @@ else
+ /* end confdefs.h.  */
+ 
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #ifndef NULL
+ #define NULL (void*)0
+ #endif
+@@ -21125,6 +21239,9 @@ else
+ 
+ /* pthread test headers */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #if HAVE_PTHREADS < 7
+ #include <errno.h>
+ #endif
+@@ -21135,7 +21252,7 @@ else
+ static void *task(p)
+ 	void *p;
+ {
+-	return (void *) (p == NULL);
++	return (void *) ((uintptr_t)(p == NULL));
+ }
+ 
+ 
+@@ -21235,6 +21352,9 @@ else
+ #include <sys/time.h>
+ #include <unistd.h>
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #ifndef NULL
+ #define NULL (void*) 0
+ #endif
+@@ -21552,6 +21672,9 @@ else
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ _ACEOF
+ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+   $EGREP "pthread_kill_other_threads_np" >/dev/null 2>&1; then :
+diff --git a/configure.ac b/configure.ac
+index 0978eeb..8f5d122 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1452,6 +1452,9 @@ dnl			[ol_cv_pthread_lpthread_lexc])
+ 				dnl save the flags
+ 				AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ pthread_rwlock_t rwlock;
+ ]], [[pthread_rwlock_destroy(&rwlock);]])],[ol_cv_func_pthread_rwlock_destroy=yes],[ol_cv_func_pthread_rwlock_destroy=no])
+ 			])
+@@ -1467,6 +1470,9 @@ pthread_rwlock_t rwlock;
+ 				dnl save the flags
+ 				AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #ifndef NULL
+ #define NULL (void*)0
+ #endif
+@@ -1529,6 +1535,9 @@ dnl			esac
+ #include <sys/time.h>
+ #include <unistd.h>
+ #include <pthread.h>
++#include <stdio.h>
++#include <stdint.h>
++
+ #ifndef NULL
+ #define NULL (void*) 0
+ #endif
+-- 
+2.34.1
+

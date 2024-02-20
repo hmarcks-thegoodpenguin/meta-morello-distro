@@ -1,0 +1,67 @@
+From b9d319b8e5a71eb036937959da051d3780f9c27d Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Fri, 7 Jul 2023 09:59:36 +0100
+Subject: [PATCH 5/7] connection: fix provenance error
+
+Use uintptr_t not int for pointers.
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ servers/slapd/connection.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/servers/slapd/connection.c b/servers/slapd/connection.c
+index b8ea92a..33a6c13 100644
+--- a/servers/slapd/connection.c
++++ b/servers/slapd/connection.c
+@@ -25,6 +25,7 @@
+ 
+ #include "portable.h"
+ 
++#include <stdint.h>
+ #include <stdio.h>
+ #ifdef HAVE_LIMITS_H
+ #include <limits.h>
+@@ -1246,7 +1247,7 @@ static int connection_read( ber_socket_t s, conn_readinfo *cri );
+ 
+ static void* connection_read_thread( void* ctx, void* argv )
+ {
+-	int rc ;
++	int rc;
+ 	conn_readinfo cri = { NULL, NULL, NULL, NULL, 0 };
+ 	ber_socket_t s = (long)argv;
+ 
+@@ -1257,17 +1258,17 @@ static void* connection_read_thread( void* ctx, void* argv )
+ 	cri.ctx = ctx;
+ 	if( ( rc = connection_read( s, &cri ) ) < 0 ) {
+ 		Debug( LDAP_DEBUG_CONNS, "connection_read(%d) error\n", s );
+-		return (void*)(long)rc;
++		return (void*)(uintptr_t)rc;
+ 	}
+ 
+ 	/* execute a single queued request in the same thread */
+ 	if( cri.op && !cri.nullop ) {
+-		rc = (long)connection_operation( ctx, cri.op );
++		rc = connection_operation( ctx, cri.op );
+ 	} else if ( cri.func ) {
+-		rc = (long)cri.func( ctx, cri.arg );
++		rc = cri.func( ctx, cri.arg );
+ 	}
+ 
+-	return (void*)(long)rc;
++	return (void*)(uintptr_t)rc;
+ }
+ 
+ int connection_read_activate( ber_socket_t s )
+@@ -1284,7 +1285,7 @@ int connection_read_activate( ber_socket_t s )
+ 		return rc;
+ 
+ 	rc = ldap_pvt_thread_pool_submit( &connection_pool,
+-		connection_read_thread, (void *)(long)s );
++		connection_read_thread, (void *)(uintptr_t)s );
+ 
+ 	if( rc != 0 ) {
+ 		Debug( LDAP_DEBUG_ANY,
+-- 
+2.34.1
+

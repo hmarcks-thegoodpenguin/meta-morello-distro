@@ -1,0 +1,36 @@
+From e0fbb1b9512e85f33497a96d7a9ade87be9d170e Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Fri, 7 Jul 2023 10:52:37 +0100
+Subject: [PATCH 6/7] sets: fix provenance error
+
+Use uintptr_t not int for pointers.
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ servers/slapd/sets.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/servers/slapd/sets.c b/servers/slapd/sets.c
+index 9ab2b36..8a2dc58 100644
+--- a/servers/slapd/sets.c
++++ b/servers/slapd/sets.c
+@@ -15,6 +15,7 @@
+ 
+ #include "portable.h"
+ 
++#include <stdint.h>
+ #include <stdio.h>
+ #include <ac/string.h>
+ 
+@@ -553,7 +554,7 @@ slap_set_filter( SLAP_SET_GATHER gatherer,
+ #define SF_POP()	( (BerVarray)( ( stp < 0 ) ? 0 : stack[ stp-- ] ) )
+ #define SF_PUSH(x)	do { \
+ 		if ( stp >= ( STACK_SIZE - 1 ) ) SF_ERROR( overflow ); \
+-		stack[ ++stp ] = (BerVarray)(long)(x); \
++		stack[ ++stp ] = (BerVarray)(uintptr_t)(x); \
+ 	} while ( 0 )
+ 
+ 	BerVarray	set, lset;
+-- 
+2.34.1
+

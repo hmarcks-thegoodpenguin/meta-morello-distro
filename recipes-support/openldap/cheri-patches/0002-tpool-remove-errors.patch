@@ -1,0 +1,37 @@
+From cbf9e2e7eccb51ebfa3036c81b3c08691b19ef13 Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Thu, 6 Jul 2023 17:42:48 +0100
+Subject: [PATCH 2/7] tpool: remove errors
+
+Cast the RHS to uintptr_t.
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ libraries/libldap/tpool.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/libraries/libldap/tpool.c b/libraries/libldap/tpool.c
+index 797d59e..ce4a840 100644
+--- a/libraries/libldap/tpool.c
++++ b/libraries/libldap/tpool.c
+@@ -258,7 +258,7 @@ ldap_pvt_thread_pool_init_q (
+ 			LDAP_FREE(pool);
+ 			return(-1);
+ 		}
+-		pool->ltp_wqs[i] = (struct ldap_int_thread_poolq_s *)(((size_t)ptr + CACHELINE-1) & ~(CACHELINE-1));
++		pool->ltp_wqs[i] = (struct ldap_int_thread_poolq_s *)((uintptr_t)(((size_t)ptr + CACHELINE-1) & ~(CACHELINE-1)));
+ 		pool->ltp_wqs[i]->ltp_free = ptr;
+ 	}
+ 
+@@ -594,7 +594,7 @@ ldap_pvt_thread_pool_queues(
+ 					pool->ltp_wqs[i] = NULL;
+ 				return(-1);
+ 			}
+-			pq = (struct ldap_int_thread_poolq_s *)(((size_t)ptr + CACHELINE-1) & ~(CACHELINE-1));
++			pq = (struct ldap_int_thread_poolq_s *)((uintptr_t)(((size_t)ptr + CACHELINE-1) & ~(CACHELINE-1)));
+ 			pq->ltp_free = ptr;
+ 			pool->ltp_wqs[i] = pq;
+ 			pq->ltp_pool = pool;
+-- 
+2.34.1
+
