@@ -1,0 +1,39 @@
+From ac44bb2ccdf9c926c2a217e1002f5c4a49c549a8 Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Thu, 9 Nov 2023 14:07:09 +0000
+Subject: [PATCH 3/3] sljitUtils: cheri provenance
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ sljit/sljitUtils.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/sljit/sljitUtils.c b/sljit/sljitUtils.c
+index 857492a..094cb5a 100644
+--- a/sljit/sljitUtils.c
++++ b/sljit/sljitUtils.c
+@@ -312,7 +312,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_u8 *SLJIT_FUNC sljit_stack_resize(struct sljit_st
+ 				return NULL;
+ 		}
+ 		else {
+-			if (!VirtualFree((void*)aligned_old_start, aligned_new_start - aligned_old_start, MEM_DECOMMIT))
++			if (!VirtualFree((void*)(uintptr_t)aligned_old_start, aligned_new_start - aligned_old_start, MEM_DECOMMIT))
+ 				return NULL;
+ 		}
+ 	}
+@@ -323,10 +323,10 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_u8 *SLJIT_FUNC sljit_stack_resize(struct sljit_st
+ 		/* If madvise is available, we release the unnecessary space. */
+ #if defined(MADV_DONTNEED)
+ 		if (aligned_new_start > aligned_old_start)
+-			madvise((void*)aligned_old_start, aligned_new_start - aligned_old_start, MADV_DONTNEED);
++			madvise((void*)(uintptr_t)aligned_old_start, aligned_new_start - aligned_old_start, MADV_DONTNEED);
+ #elif defined(POSIX_MADV_DONTNEED)
+ 		if (aligned_new_start > aligned_old_start)
+-			posix_madvise((void*)aligned_old_start, aligned_new_start - aligned_old_start, POSIX_MADV_DONTNEED);
++			posix_madvise((void*)(uintptr_t)aligned_old_start, aligned_new_start - aligned_old_start, POSIX_MADV_DONTNEED);
+ #endif
+ 	}
+ #endif
+-- 
+2.34.1
+

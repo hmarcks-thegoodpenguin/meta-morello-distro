@@ -1,0 +1,61 @@
+From b6c4c1121f09698ff8bc5c491898aeda33b449c8 Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Thu, 9 Nov 2023 11:50:55 +0000
+Subject: [PATCH 2/3] sljitNativeARM_64: cheri provenance
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ sljit/sljitNativeARM_64.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/sljit/sljitNativeARM_64.c b/sljit/sljitNativeARM_64.c
+index e15b345..6d450f1 100644
+--- a/sljit/sljitNativeARM_64.c
++++ b/sljit/sljitNativeARM_64.c
+@@ -24,6 +24,7 @@
+  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
++#include <stdint.h>
+ SLJIT_API_FUNC_ATTRIBUTE const char* sljit_get_platform_name(void)
+ {
+ 	return "ARM-64" SLJIT_CPUINFO;
+@@ -324,7 +325,7 @@ SLJIT_API_FUNC_ATTRIBUTE void* sljit_generate_code(struct sljit_compiler *compil
+ 	while (jump) {
+ 		do {
+ 			addr = (jump->flags & JUMP_LABEL) ? jump->u.label->addr : jump->u.target;
+-			buf_ptr = (sljit_ins *)jump->addr;
++			buf_ptr = (sljit_ins *)(uintptr_t)jump->addr;
+ 
+ 			if (jump->flags & PATCH_B) {
+ 				addr = (sljit_sw)(addr - (sljit_uw)SLJIT_ADD_EXEC_OFFSET(buf_ptr, executable_offset)) >> 2;
+@@ -358,7 +359,7 @@ SLJIT_API_FUNC_ATTRIBUTE void* sljit_generate_code(struct sljit_compiler *compil
+ 	put_label = compiler->put_labels;
+ 	while (put_label) {
+ 		addr = put_label->label->addr;
+-		buf_ptr = (sljit_ins *)put_label->addr;
++		buf_ptr = (sljit_ins *)(uintptr_t)put_label->addr;
+ 
+ 		buf_ptr[0] |= (addr & 0xffff) << 5;
+ 		buf_ptr[1] |= ((addr >> 16) & 0xffff) << 5;
+@@ -2020,7 +2021,7 @@ SLJIT_API_FUNC_ATTRIBUTE struct sljit_put_label* sljit_emit_put_label(struct slj
+ 
+ SLJIT_API_FUNC_ATTRIBUTE void sljit_set_jump_addr(sljit_uw addr, sljit_uw new_target, sljit_sw executable_offset)
+ {
+-	sljit_ins* inst = (sljit_ins*)addr;
++	sljit_ins* inst = (sljit_ins*)(uintptr_t)addr;
+ 	modify_imm64_const(inst, new_target);
+ 	inst = (sljit_ins *)SLJIT_ADD_EXEC_OFFSET(inst, executable_offset);
+ 	SLJIT_CACHE_FLUSH(inst, inst + 4);
+@@ -2028,7 +2029,7 @@ SLJIT_API_FUNC_ATTRIBUTE void sljit_set_jump_addr(sljit_uw addr, sljit_uw new_ta
+ 
+ SLJIT_API_FUNC_ATTRIBUTE void sljit_set_const(sljit_uw addr, sljit_sw new_constant, sljit_sw executable_offset)
+ {
+-	sljit_ins* inst = (sljit_ins*)addr;
++	sljit_ins* inst = (sljit_ins*)(uintptr_t)addr;
+ 	modify_imm64_const(inst, new_constant);
+ 	inst = (sljit_ins *)SLJIT_ADD_EXEC_OFFSET(inst, executable_offset);
+ 	SLJIT_CACHE_FLUSH(inst, inst + 4);
+-- 
+2.34.1
+
