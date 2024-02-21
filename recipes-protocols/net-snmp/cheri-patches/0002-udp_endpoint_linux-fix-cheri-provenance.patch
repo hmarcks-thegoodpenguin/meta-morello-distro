@@ -1,0 +1,28 @@
+From 16d13618f3ae71394be8247a5de2aadace40a31b Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Mon, 10 Jul 2023 13:30:38 +0100
+Subject: [PATCH 2/2] udp_endpoint_linux: fix cheri provenance
+
+Cast the size to uintptr_t.
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ agent/mibgroup/udp-mib/data_access/udp_endpoint_linux.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/agent/mibgroup/udp-mib/data_access/udp_endpoint_linux.c b/agent/mibgroup/udp-mib/data_access/udp_endpoint_linux.c
+index f0c92d8..c6f6e9f 100644
+--- a/agent/mibgroup/udp-mib/data_access/udp_endpoint_linux.c
++++ b/agent/mibgroup/udp-mib/data_access/udp_endpoint_linux.c
+@@ -303,7 +303,7 @@ _load6(netsnmp_container *container, u_int load_flags)
+     memset(&lpi, 0x0, sizeof(lpi));
+     lpi.mem_size = sizeof(netsnmp_udp_endpoint_entry);
+     lpi.process = _process_line_udp_ep;
+-    lpi.user_context = (void*)CONTAINER_SIZE(container);
++    lpi.user_context = (void*)(uintptr_t)CONTAINER_SIZE(container);
+ 
+     container = netsnmp_file_text_parse(fp, container, PM_USER_FUNCTION,
+                                         0, &lpi);
+-- 
+2.34.1
+

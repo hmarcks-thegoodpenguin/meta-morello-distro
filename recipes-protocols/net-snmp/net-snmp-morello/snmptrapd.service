@@ -1,0 +1,14 @@
+[Unit]
+Description=Simple Network Management Protocol (SNMP) Trap Daemon.
+After=syslog.target network.target
+
+[Service]
+Type=notify
+Environment=PURECAP_DIR=%PURECAP_DIR%
+Environment=OPTIONS="-Lsd"
+EnvironmentFile=-/etc/default/snmptrapd
+ExecStart=${PURECAP_DIR}/usr/sbin/snmptrapd $OPTIONS -f
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target

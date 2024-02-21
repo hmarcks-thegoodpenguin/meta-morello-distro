@@ -1,0 +1,32 @@
+From af83d85774efe2d4114430fc178e8835346dcfea Mon Sep 17 00:00:00 2001
+From: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+Date: Mon, 10 Jul 2023 12:59:45 +0100
+Subject: [PATCH] tools: fix cheri provenance
+
+Replace the cast size_t with uintptr_t, it is safe to do
+so as this macro is used only with pointers.
+
+Signed-off-by: Pawel Zalewski <pzalewski@thegoodpenguin.co.uk>
+---
+ include/net-snmp/library/tools.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/net-snmp/library/tools.h b/include/net-snmp/library/tools.h
+index 2b69d63..ed9cda7 100644
+--- a/include/net-snmp/library/tools.h
++++ b/include/net-snmp/library/tools.h
+@@ -88,9 +88,9 @@ extern          "C" {
+  */
+ #if defined(__GNUC__)
+ #define NETSNMP_REMOVE_CONST(t, e)                                      \
+-    (__extension__ ({ const t tmp = (e); (t)(size_t)tmp; }))
++    (__extension__ ({ const t tmp = (e); (t)(uintptr_t)tmp; }))
+ #else
+-#define NETSNMP_REMOVE_CONST(t, e) ((t)(size_t)(e))
++#define NETSNMP_REMOVE_CONST(t, e) ((t)(uintptr_t)(e))
+ #endif
+ 
+ 
+-- 
+2.34.1
+
