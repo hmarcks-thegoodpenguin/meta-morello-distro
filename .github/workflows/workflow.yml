@@ -1,0 +1,88 @@
+name: meta-morello-distro
+
+on:
+  push:
+    branches:
+      - 'master'
+
+env:
+  BUILD_DIR: ${{github.workspace}}/volatile
+
+jobs:
+
+  check-layers:
+    runs-on: [tgp-aws]
+
+    container:
+      image: pwltgp/yocto:22.04
+
+    steps:
+      - name: Set up environment
+        run: |
+          echo HOME=/home/ci | sudo tee -a $GITHUB_ENV
+          ln -sf /home/ci $GITHUB_WORKSPACE/volatile
+
+          sudo apt-get update
+          sudo apt install -yy libc++-13-dev libc++abi-13-dev
+          sudo apt-get install -yy libtinfo5
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: ${{env.BUILD_DIR}}/meta-morello-distro
+
+      - name: Run check-layers
+        run: |
+          cd $BUILD_DIR
+          kas shell --update --force-checkout meta-morello-distro/kas/base.yml --command "yocto-check-layer-wrapper $BUILD_DIR/meta-morello-distro -n --dependency $BUILD_DIR/meta-* $BUILD_DIR/meta-arm/meta-arm $BUILD_DIR/meta-arm/meta-arm-toolchain $BUILD_DIR/meta-morello/meta-morello $BUILD_DIR/meta-morello/meta-morello-toolchain $BUILD_DIR/meta-openembedded/meta-oe $BUILD_DIR/meta-openembedded/meta-networking $BUILD_DIR/meta-openembedded/meta-webserver $BUILD_DIR/meta-openembedded/meta-filesystems $BUILD_DIR/meta-openembedded/meta-python"
+
+  build:
+    runs-on: [tgp-aws]
+
+    container:
+        image: pwltgp/yocto:22.04
+
+    steps:
+      - name: Set up environment
+        run: |
+
+          echo HOME=/home/ci | sudo tee -a $GITHUB_ENV
+          ln -sf /home/ci $GITHUB_WORKSPACE/volatile
+
+          sudo apt-get update
+          sudo apt install -yy libc++-13-dev libc++abi-13-dev
+          sudo apt install -yy libtinfo5 sed
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: ${{env.BUILD_DIR}}/meta-morello-distro
+
+      - name: Build meta-morello-distro soc
+        run: |
+          cd $BUILD_DIR
+
+          kas build ./meta-morello-distro/kas/debug-soc.yml
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: failure-logs
+          path: |
+            ${{env.BUILD_DIR}}/build/tmp*/work*/**/temp/*.do_*.*
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: morello_artifacts_wic
+          path: |
+              ${{env.BUILD_DIR}}/build/tmp-soc/deploy/images/morello-soc/usb-image-morello-soc.wic
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: morello_artifacts_firmware
+          path: |
+              ${{env.BUILD_DIR}}/build/tmp-soc/deploy/images/morello-soc/board-firmware-sd-image.img
+
