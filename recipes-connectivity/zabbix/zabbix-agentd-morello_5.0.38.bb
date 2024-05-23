@@ -24,6 +24,11 @@ RPROVIDES:${PN} += "zabbix-agentd"
 
 BPN_ZABBIX = "zabbix-agentd"
 
+SYSTEMD_AUTO_ENABLE:${PN} = "enable"
+SYSTEMD_SERVICE:${PN}     = "zabbix-agentd.service"
+
+SERVER_HOSTNAME = "${MACHINE}"
+
 do_install:append() {
 
     install -d ${D}${systemd_system_unitdir} ${D}${sysconfdir}
