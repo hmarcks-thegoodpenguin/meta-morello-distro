@@ -22,7 +22,7 @@ SRC_URI += "\
 SRC_URI += " \
     file://postgresql-init \
     file://postgresql-init.service \
-    file://postgresql-morello.service \
+    file://postgresql.service \
     "
 
 SRC_URI += "\
@@ -90,7 +90,7 @@ do_install:append() {
   sed -e "s:%DB_PASSWORD%:${DB_PASSWORD}:g" -i ${PG_INIT_SERVICE_FILE}
   sed -e "s:%DB_ROOT_PASSWORD%:${DB_ROOT_PASSWORD}:g" -i ${PG_INIT_SERVICE_FILE}
 
-  install -m 644 ${WORKDIR}/postgresql-morello.service ${PG_SERVICE_FILE}
+  install -m 644 ${WORKDIR}/postgresql.service ${PG_SERVICE_FILE}
 
   sed -e 's,%BINDIR%,${bindir},g' -i ${PG_SERVICE_FILE}
   sed -e "s:%PGINSTALLDIR%:${prefix}:g" -i ${PG_SERVICE_FILE}

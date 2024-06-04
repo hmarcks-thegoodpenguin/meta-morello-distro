@@ -1,3 +1,5 @@
+inherit perlnative autotools-brokensep pure-cap-kheaders pkgconfig systemd
+
 SUMMARY = "Open-source monitoring solution for your IT infrastructure"
 
 MORELLO_SRC = "meta-openembedded/meta-oe/recipes-connectivity/zabbix/zabbix_5.4.12.bb"
@@ -24,6 +26,7 @@ LICENSE          = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://COPYING;md5=300e938ad303147fede2294ed78fe02e"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/cheri-patches:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 TOOLCHAIN                = "${MORELLO_TOOLCHAIN}"
 
 PV   = "5.0.38"
@@ -65,7 +68,7 @@ PACKAGECONFIG[ldap]       = "--with-ldap=${STAGING_EXECPREFIXDIR},--without-ldap
 PACKAGECONFIG[zlib]       = "--with-zlib=${STAGING_EXECPREFIXDIR},--without-zlib,zlib-morello"
 PACKAGECONFIG[libpthread] = "--with-libpthread=${STAGING_EXECPREFIXDIR},--without-libpthread,"
 PACKAGECONFIG[libpcre]    = "--with-libpcre=${STAGING_EXECPREFIXDIR},--without-libpcre,libpcre-morello"
-PACKAGECONFIG[curl]       = "--with-libcurl=${STAGING_BINDIR}/curl-config, --without-libcurl, curl-morello"
+PACKAGECONFIG[curl]       = "--with-libcurl=${STAGING_BINDIR}/crossscripts/curl-config, --without-libcurl, curl-morello"
 PACKAGECONFIG[iconv]      = "--with-iconv=${STAGING_EXECPREFIXDIR},--without-iconv,virtual/libiconv"
 
 EXTRA_OECONF = " \
