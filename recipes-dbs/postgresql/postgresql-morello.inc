@@ -52,6 +52,7 @@ export LDFLAGS_SL = "${LDFLAGS}"
 CFLAGS  += "-I${STAGING_DIR_HOST}/usr/include/${PYTHON_DIR} -I${STAGING_INCDIR}/tcl8.6 -Wno-unused-function -pipe -msoft-float -integrated-as -O0 -g"
 CLAGS   += "-Wno-deprecated-declarations -Wno-compound-token-split-by-macro"
 LDFLAGS += "-pthread"
+INHIBIT_PACKAGE_STRIP:toolchain-llvm-morello = "1"
 
 SYSTEMD_SERVICE:${PN}     = "postgresql.service"
 SYSTEMD_AUTO_ENABLE:${PN} = "disable"
