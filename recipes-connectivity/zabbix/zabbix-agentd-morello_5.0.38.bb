@@ -4,9 +4,12 @@ inherit purecap-sysroot purecap-useradd
 require zabbix-morello.inc
 
 SRC_URI += " \
-            file://zabbix-agentd-morello.service \
+            file://zabbix-agentd.service \
             file://zabbix-agentd.conf \
             "
+
+DEPENDS = " curl-morello "
+RDEPENDS:${PN} = " curl-morello "
 
 # Seperate user for agent for security reasons. If the user is shared the agent
 # will have full access to the server's DB.
@@ -25,25 +28,21 @@ RPROVIDES:${PN} += "zabbix-agentd"
 BPN_ZABBIX = "zabbix-agentd"
 
 SYSTEMD_AUTO_ENABLE:${PN} = "enable"
-SYSTEMD_SERVICE:${PN}     = "zabbix-agentd.service"
+SYSTEMD_SERVICE:${PN}     = "${BPN_ZABBIX}.service"
 
 SERVER_HOSTNAME = "${MACHINE}"
 
 do_install:append() {
 
-    install -d ${D}${systemd_system_unitdir} ${D}${sysconfdir}
-    install -m 0644 ${WORKDIR}/${BPN}.service ${D}${systemd_system_unitdir}/${BPN_ZABBIX}.service
+    install -d ${D}${systemd_system_unitdir}
+    install -m 0644 ${WORKDIR}/${BPN_ZABBIX}.service ${D}${systemd_system_unitdir}/${BPN_ZABBIX}.service
 
     sed -i -e 's#%SBINDIR%#${sbindir}#g' ${D}${systemd_system_unitdir}/${BPN_ZABBIX}.service
     sed -i -e 's#%SYSCONFDIR%#${sysconfdir}#g' ${D}${systemd_system_unitdir}/${BPN_ZABBIX}.service
 
-    install -d ${D}${sysconfdir}/zabbix/${BPN_ZABBIX}.conf.d/
+    install -d ${D}${sysconfdir}/zabbix/
     install -m 0644 ${WORKDIR}/${BPN_ZABBIX}.conf ${D}${sysconfdir}/zabbix/
-
-    sed -i -e 's#%DB_ZABBIX_USER_AGENT%#${DB_ZABBIX_USER_AGENT}#g' ${D}${systemd_system_unitdir}/${BPN_ZABBIX}.service
-    sed -i -e 's#%DB_ZABBIX_USER_AGENT%#${DB_ZABBIX_USER_AGENT}#g' ${D}${sysconfdir}/zabbix/${BPN_ZABBIX}.conf
-    sed -i -e 's#%ZABBIX_USER_NAME%#${DB_ZABBIX_USER_AGENT}#g' ${D}${sysconfdir}/zabbix/${BPN_ZABBIX}.conf
-
+    sed -i -e 's#%ZABBIX_IP_ADDR%#${ZABBIX_IP_ADDR}#g' ${D}${sysconfdir}/${BPN_ZABBIX}.conf
 }
 
 do_install:append() {
@@ -53,5 +52,6 @@ do_install:append() {
 
 FILES:${PN} += " ${libdir} \
                  ${systemd_system_unitdir}/${BPN_ZABBIX}.service \
+                 ${sysconfdir} \
                  "
 FILES:${PN}-dbg += "${datadir}"
