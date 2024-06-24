@@ -1,6 +1,6 @@
 require postgresql-morello.inc
 
-FILESEXTRAPATHS:prepend := "${THISDIR}/postgresql:${THISDIR}/cheri-patches:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/postgresql:${THISDIR}/cheri-patches:${THISDIR}/files:"
 
 PVBASE = "9.6"
 LIC_FILES_CHKSUM = "file://COPYRIGHT;md5=87da2b84884860b71f5f24ab37e7da78"
@@ -22,7 +22,7 @@ SRC_URI += "\
 SRC_URI += " \
     file://postgresql-init \
     file://postgresql-init.service \
-    file://postgresql-morello.service \
+    file://postgresql.service \
     "
 
 SRC_URI += "\
@@ -59,6 +59,9 @@ PACKAGECONFIG[openssl] = "--with-openssl,--without-openssl,openssl-morello,"
 
 export PRINTF_SIZE_T_SUPPORT="yes"
 
+PG_INIT_SERVICE_FILE = "${D}${systemd_unitdir}/system/postgresql-init.service"
+PG_SERVICE_FILE = "${D}${systemd_unitdir}/system/postgresql.service"
+
 do_install:append() {
 
   install_dir="${D}"
@@ -71,11 +74,11 @@ do_install:append() {
   sed -e "s:%DB_DATADIR%:${DB_DATADIR}:g" -i ${D_DEST_DIR}/postgresql-init
   sed -e "s:%PGINSTALLDIR%:${prefix}:g" -i ${D_DEST_DIR}/postgresql-init
   sed -e "s:%BINDIR%:${bindir}:g" -i ${D_DEST_DIR}/postgresql-init
+
   sed -e "s:%SYSCONFDIR%:${sysconfdir}:g" -i ${D_DEST_DIR}/postgresql-init
 
   install -d ${D}${systemd_unitdir}/system/
 
-  PG_INIT_SERVICE_FILE=${D}${systemd_unitdir}/system/postgresql-init.service
   install -m 644 ${WORKDIR}/postgresql-init.service ${PG_INIT_SERVICE_FILE}
 
   sed -e "s:%PGINSTALLDIR%:${prefix}:g" -i ${PG_INIT_SERVICE_FILE}
@@ -85,9 +88,9 @@ do_install:append() {
 
   sed -e "s:%DB_USER%:${DB_USER}:g" -i ${PG_INIT_SERVICE_FILE}
   sed -e "s:%DB_PASSWORD%:${DB_PASSWORD}:g" -i ${PG_INIT_SERVICE_FILE}
+  sed -e "s:%DB_ROOT_PASSWORD%:${DB_ROOT_PASSWORD}:g" -i ${PG_INIT_SERVICE_FILE}
 
-  PG_SERVICE_FILE=${D}${systemd_unitdir}/system/postgresql.service
-  install -m 644 ${WORKDIR}/postgresql-morello.service ${PG_SERVICE_FILE}
+  install -m 644 ${WORKDIR}/postgresql.service ${PG_SERVICE_FILE}
 
   sed -e 's,%BINDIR%,${bindir},g' -i ${PG_SERVICE_FILE}
   sed -e "s:%PGINSTALLDIR%:${prefix}:g" -i ${PG_SERVICE_FILE}
@@ -153,3 +156,4 @@ FILES:${PN}-dbg += " \
 "
 
 FILES:${PN}-gdb-debug += "/gdb_debug"
+RPROVIDES:${PN} += "postgresql-setup"

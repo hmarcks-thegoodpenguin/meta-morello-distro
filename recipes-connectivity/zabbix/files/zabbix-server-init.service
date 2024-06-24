@@ -1,20 +1,21 @@
 [Unit]
-Description=Zabbix Server
+Description=Zabbix Server Init
 Wants=postgresql.service
 After=postgresql.service
 After=postgresql-init.service
 After=php-fpm.service
 
 [Service]
+Environment="SYSCONFDIR=%SYSCONFDIR%"
 Environment="CONFFILE=%SYSCONFDIR%/zabbix/zabbix-server.conf"
 Environment="DB_ZABBIX_USER_SERVER=%DB_ZABBIX_USER_SERVER%"
+Environment="DB_ZABBIX_NAME=%DB_ZABBIX_NAME%"
 Environment="DB_ZABBIX_PASSWORD=%DB_ZABBIX_PASSWORD%"
+Environment="ZABBIX_SCHEMA_LOCATION=%ZABBIX_SCHEMA_LOCATION%"
 EnvironmentFile=-%SYSCONFDIR%/default/zabbix-server
-Type=forking
+Type=oneshot
 KillMode=control-group
-ExecStart=/bin/bash -c '%SBINDIR%/zabbix_server -c ${CONFFILE}'
-ExecStop=/bin/sh -c '[ -n "$1" ] && kill -s TERM "$1"' -- "$MAINPID"
-RestartSec=10s
+ExecStart=/bin/bash -c '%SYSCONFDIR%/zabbix/zabbix-server-init.sh'
 
 [Install]
 WantedBy=multi-user.target

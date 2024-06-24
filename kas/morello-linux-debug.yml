@@ -22,3 +22,5 @@ local_conf_header:
   image: |
     EXTRA_IMAGE_FEATURES ?= "debug-tweaks"
     IMAGE_INSTALL:append = " nano"
+    IMAGE_FSTYPES:append = " tar.bz2"
+
